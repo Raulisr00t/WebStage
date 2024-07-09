@@ -73,5 +73,5 @@ The code allocates memory dynamically as it reads the data. It ensures that all 
 Make sure the URL and server you are connecting to are trusted to avoid downloading malicious payloads.
 Validate and sanitize any inputs if modifying this code for use with dynamic URLs.
 
-##License
+## License
 This project is licensed under the MIT License.
